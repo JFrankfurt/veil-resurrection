@@ -1,0 +1,25 @@
+{
+  "name": "predictions-v2",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Modern prediction market platform on Base L2",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @predictions/web dev",
+    "dev:admin": "pnpm --filter @predictions/admin dev",
+    "test": "pnpm --filter @predictions/contracts test",
+    "test:contracts": "pnpm --filter @predictions/contracts test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
