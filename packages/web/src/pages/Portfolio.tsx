@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { useAccount } from "wagmi";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Link } from "react-router-dom";
-import { formatUnits } from "viem";
+import { formatUnits, type Address } from "viem";
 import { getUserPositions, getClaimableAmount, type Position as DataPosition } from "@/lib/data";
+import { useClaim } from "@/hooks/useClaim";
+import toast from "react-hot-toast";
 
 export function PortfolioPage() {
   const { address, isConnected } = useAccount();
@@ -166,22 +169,7 @@ export function PortfolioPage() {
             </div>
             <div className="space-y-3">
               {claimablePositions.map((position, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 rounded-xl bg-[rgb(var(--bg-card))] border border-[rgb(var(--border-subtle))]"
-                >
-                  <div className="flex-1 min-w-0 mr-4">
-                    <div className="font-medium truncate mb-1 text-[rgb(var(--text-primary))]">
-                      {position.market.question}
-                    </div>
-                    <div className="text-sm text-[rgb(var(--success))]">
-                      Won with "{position.outcomes[position.market.winningOutcome!]}"
-                    </div>
-                  </div>
-                  <button className="btn btn-success whitespace-nowrap">
-                    Claim ${formatVolume(position.claimable!)}
-                  </button>
-                </div>
+                <ClaimablePositionRow key={i} position={position} />
               ))}
             </div>
           </div>
@@ -231,6 +219,65 @@ export function PortfolioPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/**
+ * Component for claimable position row with claim button
+ */
+function ClaimablePositionRow({ position }: { position: Position }) {
+  const queryClient = useQueryClient();
+  
+  const {
+    claim,
+    isLoading,
+    isClaimSuccess,
+    resetClaim,
+  } = useClaim({
+    marketAddress: position.market.address as Address,
+  });
+
+  // Handle claim success
+  useEffect(() => {
+    if (isClaimSuccess) {
+      toast.success(`Successfully claimed $${formatVolume(position.claimable!)}!`);
+      // Refetch positions to update the UI
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
+      resetClaim();
+    }
+  }, [isClaimSuccess, position.claimable, queryClient, resetClaim]);
+
+  // Handle loading toast
+  useEffect(() => {
+    if (isLoading) {
+      toast.loading("Claiming winnings...", { id: `claim-${position.market.address}` });
+    } else {
+      toast.dismiss(`claim-${position.market.address}`);
+    }
+  }, [isLoading, position.market.address]);
+
+  const handleClaim = () => {
+    claim();
+  };
+
+  return (
+    <div className="flex items-center justify-between p-4 rounded-xl bg-[rgb(var(--bg-card))] border border-[rgb(var(--border-subtle))]">
+      <div className="flex-1 min-w-0 mr-4">
+        <div className="font-medium truncate mb-1 text-[rgb(var(--text-primary))]">
+          {position.market.question}
+        </div>
+        <div className="text-sm text-[rgb(var(--success))]">
+          Won with "{position.outcomes[position.market.winningOutcome!]}"
+        </div>
+      </div>
+      <button 
+        onClick={handleClaim}
+        disabled={isLoading}
+        className="btn btn-success whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? "Claiming..." : `Claim $${formatVolume(position.claimable!)}`}
+      </button>
     </div>
   );
 }

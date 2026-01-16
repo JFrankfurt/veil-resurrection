@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatUnits, parseUnits, type Address, maxUint256 } from "viem";
 import { useContracts } from "@/hooks/useContracts";
+import { useClaim } from "@/hooks/useClaim";
 import toast from "react-hot-toast";
 
 interface Outcome {
@@ -15,6 +16,7 @@ interface TradingPanelProps {
   ammAddress: string;
   outcomes: Outcome[];
   resolved: boolean;
+  winningOutcome?: number;
 }
 
 // Router ABI with deadline
@@ -107,6 +109,7 @@ export function TradingPanel({
   ammAddress,
   outcomes,
   resolved,
+  winningOutcome,
 }: TradingPanelProps) {
   const { address, isConnected } = useAccount();
   const contracts = useContracts();
@@ -268,27 +271,15 @@ export function TradingPanel({
     isSellPending ||
     isSellConfirming;
 
+  // Render resolved market panel with claim functionality
   if (resolved) {
     return (
-      <div className="card-elevated p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-[rgb(var(--success-light))] flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--success))]">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-semibold text-[rgb(var(--text-primary))]">Market Resolved</h3>
-            <p className="text-sm text-[rgb(var(--text-muted))]">Check your portfolio for winnings</p>
-          </div>
-        </div>
-        <button
-          disabled={!isConnected}
-          className="w-full btn btn-success disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isConnected ? "Claim Winnings" : "Connect Wallet to Claim"}
-        </button>
-      </div>
+      <ResolvedMarketPanel
+        marketAddress={marketAddress}
+        outcomes={outcomes}
+        winningOutcome={winningOutcome}
+        isConnected={isConnected}
+      />
     );
   }
 
@@ -475,6 +466,124 @@ export function TradingPanel({
         </button>
       )}
 
+    </div>
+  );
+}
+
+/**
+ * Panel shown when market is resolved - allows claiming winnings
+ */
+function ResolvedMarketPanel({
+  marketAddress,
+  outcomes,
+  winningOutcome,
+  isConnected,
+}: {
+  marketAddress: string;
+  outcomes: Outcome[];
+  winningOutcome?: number;
+  isConnected: boolean;
+}) {
+  const {
+    claim,
+    isLoading,
+    isClaimSuccess,
+    canClaim,
+    estimatedPayout,
+    winningTokenBalance,
+    resetClaim,
+  } = useClaim({
+    marketAddress: marketAddress as Address,
+  });
+
+  // Handle claim success
+  useEffect(() => {
+    if (isClaimSuccess) {
+      toast.success("Winnings claimed successfully!");
+      resetClaim();
+    }
+  }, [isClaimSuccess, resetClaim]);
+
+  // Handle loading toast
+  useEffect(() => {
+    if (isLoading) {
+      toast.loading("Claiming winnings...", { id: "claim" });
+    } else {
+      toast.dismiss("claim");
+    }
+  }, [isLoading]);
+
+  const handleClaim = () => {
+    claim();
+  };
+
+  const winnerName = winningOutcome !== undefined ? outcomes[winningOutcome]?.name : "Unknown";
+  const payoutFormatted = Number(formatUnits(estimatedPayout, 6)).toFixed(2);
+  const tokensFormatted = Number(formatUnits(winningTokenBalance, 18)).toFixed(2);
+
+  return (
+    <div className="card-elevated p-6 space-y-5">
+      {/* Resolution Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-[rgb(var(--success-light))] flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--success))]">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-semibold text-lg text-[rgb(var(--text-primary))]">Market Resolved</h3>
+          <p className="text-sm text-[rgb(var(--text-muted))]">
+            Winner: <span className="text-[rgb(var(--success))] font-medium">{winnerName}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* User Position Summary */}
+      {isConnected && winningTokenBalance > BigInt(0) && (
+        <div className="p-4 rounded-xl bg-[rgb(var(--success-light))] border border-[rgb(var(--success))]/30 space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-[rgb(var(--text-secondary))]">Your winning tokens</span>
+            <span className="font-mono font-semibold text-[rgb(var(--text-primary))]">
+              {tokensFormatted} {winnerName}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-[rgb(var(--text-secondary))]">Claimable amount</span>
+            <span className="font-mono font-bold text-lg text-[rgb(var(--success))]">
+              ${payoutFormatted}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* No Position */}
+      {isConnected && winningTokenBalance === BigInt(0) && (
+        <div className="p-4 rounded-xl bg-[rgb(var(--bg-elevated))] border border-[rgb(var(--border-subtle))] text-center">
+          <p className="text-[rgb(var(--text-muted))]">
+            You don't have any winning tokens to claim
+          </p>
+        </div>
+      )}
+
+      {/* Claim Button */}
+      <button
+        onClick={handleClaim}
+        disabled={!isConnected || !canClaim || isLoading}
+        className="w-full py-4 rounded-xl font-semibold transition-all bg-[rgb(var(--success))] hover:brightness-105 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+      >
+        {!isConnected
+          ? "Connect Wallet to Claim"
+          : isLoading
+          ? "Claiming..."
+          : canClaim
+          ? `Claim $${payoutFormatted}`
+          : "Nothing to Claim"}
+      </button>
+
+      {/* Info */}
+      <div className="text-xs text-[rgb(var(--text-muted))] text-center">
+        <p>Winning tokens can be redeemed 1:1 for USDC</p>
+      </div>
     </div>
   );
 }

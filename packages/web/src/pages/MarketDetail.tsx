@@ -187,6 +187,7 @@ export function MarketDetailPage() {
                 reserve: BigInt(o.reserve),
               }))}
               resolved={market.resolved}
+              winningOutcome={market.winningOutcome ?? undefined}
             />
           </div>
         </div>
