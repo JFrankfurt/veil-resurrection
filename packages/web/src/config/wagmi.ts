@@ -1,6 +1,7 @@
 import { http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { CONTRACTS } from "@predictions/config";
 
 export const config = getDefaultConfig({
   appName: "Predictions V2",
@@ -12,18 +13,5 @@ export const config = getDefaultConfig({
   },
 });
 
-// Contract addresses per chain
-export const CONTRACTS = {
-  [base.id]: {
-    marketFactory: "0x0000000000000000000000000000000000000000" as const,
-    resolver: "0x0000000000000000000000000000000000000000" as const,
-    router: "0x0000000000000000000000000000000000000000" as const,
-    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const,
-  },
-  [baseSepolia.id]: {
-    marketFactory: "0x0000000000000000000000000000000000000000" as const,
-    resolver: "0x0000000000000000000000000000000000000000" as const,
-    router: "0x0000000000000000000000000000000000000000" as const,
-    usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const,
-  },
-} as const;
+// Re-export CONTRACTS for hooks to use
+export { CONTRACTS };

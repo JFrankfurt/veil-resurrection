@@ -1,7 +1,18 @@
 // Contract ABIs - auto-generated from Foundry build
-export { default as MarketFactoryABI } from "./json/MarketFactory.abi.json";
-export { default as MarketABI } from "./json/Market.abi.json";
-export { default as OutcomeTokenABI } from "./json/OutcomeToken.abi.json";
-export { default as OutcomeAMMABI } from "./json/OutcomeAMM.abi.json";
-export { default as RouterABI } from "./json/Router.abi.json";
-export { default as ResolverABI } from "./json/Resolver.abi.json";
+// Re-exported with proper types for wagmi compatibility
+import type { Abi } from "viem";
+
+import MarketFactoryABIJson from "./json/MarketFactory.abi.json";
+import MarketABIJson from "./json/Market.abi.json";
+import OutcomeTokenABIJson from "./json/OutcomeToken.abi.json";
+import OutcomeAMMABIJson from "./json/OutcomeAMM.abi.json";
+import RouterABIJson from "./json/Router.abi.json";
+import ResolverABIJson from "./json/Resolver.abi.json";
+
+// Cast to Abi for wagmi compatibility
+export const MarketFactoryABI = MarketFactoryABIJson as Abi;
+export const MarketABI = MarketABIJson as Abi;
+export const OutcomeTokenABI = OutcomeTokenABIJson as Abi;
+export const OutcomeAMMABI = OutcomeAMMABIJson as Abi;
+export const RouterABI = RouterABIJson as Abi;
+export const ResolverABI = ResolverABIJson as Abi;

@@ -1,80 +1,14 @@
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
-import { type Address } from "viem";
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useReadContract,
+} from "wagmi";
+import { type Address, erc20Abi } from "viem";
+import { RouterABI, OutcomeAMMABI } from "@predictions/config/abis";
 import { useContracts } from "./useContracts";
 
-// ABIs
-const ROUTER_ABI = [
-  {
-    name: "buy",
-    type: "function",
-    inputs: [
-      { name: "market", type: "address" },
-      { name: "outcome", type: "uint256" },
-      { name: "collateralAmount", type: "uint256" },
-      { name: "minTokensOut", type: "uint256" },
-    ],
-    outputs: [{ name: "tokensOut", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "sell",
-    type: "function",
-    inputs: [
-      { name: "market", type: "address" },
-      { name: "outcome", type: "uint256" },
-      { name: "tokenAmount", type: "uint256" },
-      { name: "minCollateralOut", type: "uint256" },
-    ],
-    outputs: [{ name: "collateralOut", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-] as const;
-
-const AMM_ABI = [
-  {
-    name: "quoteBuy",
-    type: "function",
-    inputs: [
-      { name: "outcome", type: "uint256" },
-      { name: "collateralAmount", type: "uint256" },
-    ],
-    outputs: [{ name: "tokensOut", type: "uint256" }],
-    stateMutability: "view",
-  },
-  {
-    name: "quoteSell",
-    type: "function",
-    inputs: [
-      { name: "outcome", type: "uint256" },
-      { name: "tokenAmount", type: "uint256" },
-    ],
-    outputs: [{ name: "collateralOut", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
-
-const ERC20_ABI = [
-  {
-    name: "approve",
-    type: "function",
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "allowance",
-    type: "function",
-    inputs: [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-    ],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
+// Re-export withSlippage from config for backwards compatibility
+export { withSlippage } from "@predictions/config";
 
 interface UseTradeParams {
   marketAddress: Address;
@@ -127,7 +61,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const useQuoteBuy = (outcome: number, collateralAmount: bigint) => {
     return useReadContract({
       address: ammAddress,
-      abi: AMM_ABI,
+      abi: OutcomeAMMABI,
       functionName: "quoteBuy",
       args: [BigInt(outcome), collateralAmount],
       query: {
@@ -142,7 +76,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const useQuoteSell = (outcome: number, tokenAmount: bigint) => {
     return useReadContract({
       address: ammAddress,
-      abi: AMM_ABI,
+      abi: OutcomeAMMABI,
       functionName: "quoteSell",
       args: [BigInt(outcome), tokenAmount],
       query: {
@@ -161,7 +95,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   ) => {
     writeBuy({
       address: contracts.router as Address,
-      abi: ROUTER_ABI,
+      abi: RouterABI,
       functionName: "buy",
       args: [marketAddress, BigInt(outcome), collateralAmount, minTokensOut],
     });
@@ -177,7 +111,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   ) => {
     writeSell({
       address: contracts.router as Address,
-      abi: ROUTER_ABI,
+      abi: RouterABI,
       functionName: "sell",
       args: [marketAddress, BigInt(outcome), tokenAmount, minCollateralOut],
     });
@@ -189,7 +123,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const approveUsdc = async (amount: bigint) => {
     writeApprove({
       address: contracts.usdc as Address,
-      abi: ERC20_ABI,
+      abi: erc20Abi,
       functionName: "approve",
       args: [contracts.router as Address, amount],
     });
@@ -201,7 +135,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const approveToken = async (tokenAddress: Address, amount: bigint) => {
     writeApprove({
       address: tokenAddress,
-      abi: ERC20_ABI,
+      abi: erc20Abi,
       functionName: "approve",
       args: [contracts.router as Address, amount],
     });
@@ -238,15 +172,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
     approveHash,
 
     // Combined loading state
-    isLoading: isBuyPending || isBuyConfirming || isSellPending || isSellConfirming,
+    isLoading:
+      isBuyPending || isBuyConfirming || isSellPending || isSellConfirming,
   };
-}
-
-/**
- * Calculate slippage-adjusted minimum output
- * @param amount - Expected output amount
- * @param slippageBps - Slippage tolerance in basis points (e.g., 500 = 5%)
- */
-export function withSlippage(amount: bigint, slippageBps: number = 500): bigint {
-  return (amount * BigInt(10000 - slippageBps)) / BigInt(10000);
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { formatUnits, parseUnits, type Address, maxUint256 } from "viem";
+import { formatVolume } from "@predictions/config";
 import { useLiquidity } from "@/hooks/useLiquidity";
 import toast from "react-hot-toast";
 
@@ -153,7 +154,7 @@ export function LiquidityPanel({
 
   const handleSubmit = () => {
     if (!isConnected || !amount) return;
-
+    
     if (isAdding) {
       addLiquidity(parsedAmount);
     } else {
@@ -218,8 +219,8 @@ export function LiquidityPanel({
       <div>
         <div className="flex justify-between mb-2">
           <label className="text-sm font-medium text-[rgb(var(--text-muted))]">
-            {isAdding ? "USDC Amount" : "LP Tokens"}
-          </label>
+          {isAdding ? "USDC Amount" : "LP Tokens"}
+        </label>
           {isConnected && (
             <span className="text-xs text-[rgb(var(--text-muted))]">
               Balance: {isAdding 
@@ -239,13 +240,13 @@ export function LiquidityPanel({
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
             {!isAdding && lpBalance > BigInt(0) && (
-              <button
+            <button
                 onClick={() => setAmount(formatUnits(lpBalance, 18))}
                 className="px-2 py-1 text-xs bg-[rgb(var(--bg-muted))] rounded-md hover:bg-[rgb(var(--bg-elevated))] text-[rgb(var(--text-secondary))] font-medium"
-              >
-                MAX
-              </button>
-            )}
+            >
+              MAX
+            </button>
+          )}
             <span className="text-[rgb(var(--text-muted))] text-sm font-medium">
               {isAdding ? "USDC" : "LP"}
             </span>
@@ -321,27 +322,20 @@ export function LiquidityPanel({
             : "Approve LP Tokens"}
         </button>
       ) : (
-        <button
-          onClick={handleSubmit}
+      <button
+        onClick={handleSubmit}
           disabled={!isConnected || !amount || isLoading || parsedAmount === BigInt(0)}
           className="w-full py-3.5 rounded-xl font-semibold transition-all bg-[rgb(var(--accent-primary))] hover:bg-[rgb(var(--accent-hover))] text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-        >
-          {!isConnected
-            ? "Connect Wallet"
+      >
+        {!isConnected
+          ? "Connect Wallet"
             : isLoading
             ? isAdding ? "Adding..." : "Removing..."
-            : isAdding
-            ? "Add Liquidity"
-            : "Remove Liquidity"}
-        </button>
+          : isAdding
+          ? "Add Liquidity"
+          : "Remove Liquidity"}
+      </button>
       )}
     </div>
   );
-}
-
-function formatVolume(volume: bigint): string {
-  const num = Number(formatUnits(volume, 6));
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
-  return num.toFixed(2);
 }

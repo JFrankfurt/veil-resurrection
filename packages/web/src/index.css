@@ -32,19 +32,37 @@
     /* Borders */
     --border-subtle: 229 229 229;
     --border-prominent: 212 212 212;
+    
+    /* Safe areas for mobile */
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    --safe-area-left: env(safe-area-inset-left);
+    --safe-area-right: env(safe-area-inset-right);
   }
   
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   
   body {
     @apply bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text-primary))];
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: contain;
+    /* Safe area padding for notched devices */
+    padding-top: var(--safe-area-top);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
   }
   
   ::selection {
     @apply bg-[rgb(var(--accent-primary))] text-white;
+  }
+  
+  /* Better touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -55,9 +73,12 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
   
-  .card:hover {
-    @apply border-[rgb(var(--border-prominent))];
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* No hover effects on touch devices */
+  @media (hover: hover) {
+    .card:hover {
+      @apply border-[rgb(var(--border-prominent))];
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
   }
   
   .card-elevated {
@@ -65,46 +86,93 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
   }
   
-  /* Buttons */
+  /* Buttons - mobile optimized with min touch targets */
   .btn {
-    @apply px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200;
+    @apply px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200;
     @apply active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    /* Minimum touch target */
+    min-height: 44px;
+    /* Prevent text selection on tap */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Larger buttons on mobile */
+  @media (max-width: 640px) {
+    .btn {
+      @apply py-3.5 text-base;
+      min-height: 48px;
+    }
   }
   
   .btn-primary {
     @apply bg-[rgb(var(--accent-primary))] text-white;
-    @apply hover:bg-[rgb(var(--accent-hover))];
-    @apply shadow-sm hover:shadow-md;
+    @apply shadow-sm;
+  }
+  
+  @media (hover: hover) {
+    .btn-primary:hover {
+      @apply bg-[rgb(var(--accent-hover))] shadow-md;
+    }
   }
   
   .btn-secondary {
     @apply bg-[rgb(var(--bg-card))] border border-[rgb(var(--border-prominent))];
-    @apply text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-elevated))] hover:border-[rgb(var(--text-muted))];
+    @apply text-[rgb(var(--text-primary))];
+  }
+  
+  @media (hover: hover) {
+    .btn-secondary:hover {
+      @apply bg-[rgb(var(--bg-elevated))] border-[rgb(var(--text-muted))];
+    }
   }
   
   .btn-success {
     @apply bg-[rgb(var(--success))] text-white;
-    @apply hover:brightness-110;
-    @apply shadow-sm hover:shadow-md;
+    @apply shadow-sm;
+  }
+  
+  @media (hover: hover) {
+    .btn-success:hover {
+      @apply brightness-110 shadow-md;
+    }
   }
   
   .btn-ghost {
     @apply bg-transparent text-[rgb(var(--text-secondary))];
-    @apply hover:bg-[rgb(var(--bg-elevated))] hover:text-[rgb(var(--text-primary))];
   }
   
-  /* Inputs */
+  @media (hover: hover) {
+    .btn-ghost:hover {
+      @apply bg-[rgb(var(--bg-elevated))] text-[rgb(var(--text-primary))];
+    }
+  }
+  
+  /* Inputs - mobile optimized */
   .input {
-    @apply w-full px-4 py-3 rounded-xl bg-[rgb(var(--bg-card))];
+    @apply w-full px-4 py-3.5 rounded-xl bg-[rgb(var(--bg-card))];
     @apply border border-[rgb(var(--border-subtle))] text-[rgb(var(--text-primary))];
     @apply placeholder:text-[rgb(var(--text-muted))] transition-all duration-200;
     @apply focus:outline-none focus:border-[rgb(var(--accent-primary))] focus:ring-2 focus:ring-[rgb(var(--accent-primary))]/20;
+    /* Minimum touch target */
+    min-height: 48px;
+    /* Prevent zoom on iOS */
+    font-size: 16px;
+  }
+  
+  @media (max-width: 640px) {
+    .input {
+      @apply py-4 text-base;
+      min-height: 52px;
+    }
   }
   
   /* Badge / Chip */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium;
     @apply border border-transparent;
+    /* Minimum touch target for tappable badges */
+    min-height: 32px;
   }
   
   .badge-live {
@@ -132,6 +200,28 @@
   .skeleton {
     @apply animate-pulse rounded-lg bg-[rgb(var(--bg-muted))];
   }
+  
+  /* Mobile bottom nav */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    @apply bg-[rgb(var(--bg-card))]/95 backdrop-blur-md;
+    @apply border-t border-[rgb(var(--border-subtle))];
+    padding-bottom: max(var(--safe-area-bottom), 8px);
+  }
+  
+  .bottom-nav-item {
+    @apply flex-1 flex flex-col items-center justify-center py-2 gap-1;
+    @apply text-[rgb(var(--text-muted))] transition-colors;
+    min-height: 56px;
+  }
+  
+  .bottom-nav-item.active {
+    @apply text-[rgb(var(--accent-primary))];
+  }
+  
+  .bottom-nav-item span {
+    @apply text-[10px] font-medium;
+  }
 }
 
 @layer utilities {
@@ -157,5 +247,37 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  
+  /* Mobile touch feedback */
+  .touch-feedback {
+    @apply active:bg-[rgb(var(--bg-muted))] transition-colors;
+  }
+  
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: max(var(--safe-area-bottom), 1rem);
+  }
+  
+  .pt-safe {
+    padding-top: var(--safe-area-top);
+  }
+  
+  /* Mobile-specific spacing */
+  @media (max-width: 640px) {
+    .mobile-full-width {
+      @apply -mx-4 px-4;
+      border-radius: 0;
+    }
+  }
+  
+  /* Hide on mobile */
+  .hide-mobile {
+    @apply hidden sm:block;
+  }
+  
+  /* Show only on mobile */
+  .show-mobile {
+    @apply block sm:hidden;
   }
 }

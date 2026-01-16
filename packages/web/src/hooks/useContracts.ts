@@ -1,16 +1,13 @@
 import { useChainId } from "wagmi";
-import { CONTRACTS } from "@/config/wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { CONTRACTS, getContracts } from "@predictions/config";
 
 /**
  * Hook to get contract addresses for the current chain
  */
 export function useContracts() {
   const chainId = useChainId();
-  
-  const contracts = chainId && chainId in CONTRACTS
-    ? CONTRACTS[chainId as keyof typeof CONTRACTS]
-    : CONTRACTS[baseSepolia.id];
-
-  return contracts;
+  return getContracts(chainId);
 }
+
+// Re-export CONTRACTS for direct access
+export { CONTRACTS };

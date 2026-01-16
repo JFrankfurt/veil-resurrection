@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { TradingPanel } from "@/components/TradingPanel";
 import { formatUnits } from "viem";
+import { formatVolume, formatTimeAgo } from "@predictions/config";
 import { getMarket, getTrades, type Trade } from "@/lib/data";
 
 export function MarketDetailPage() {
@@ -31,153 +32,48 @@ export function MarketDetailPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Back Link */}
+    <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 pb-8">
+      {/* Back Link - Larger touch target on mobile */}
       <Link
         to="/"
-        className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text-primary))] transition-colors mb-6"
+        className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text-primary))] transition-colors mb-4 sm:mb-6 py-2 -my-2"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        <span>Back to markets</span>
+        <span className="text-sm sm:text-base">Back to markets</span>
       </Link>
 
       {/* Header */}
-      <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-3 mb-4">
+      <header className="mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
           <StatusBadge
             resolved={market.resolved}
             daysRemaining={daysRemaining}
           />
-          <span className="text-sm text-[rgb(var(--text-muted))]">
+          <span className="text-xs sm:text-sm text-[rgb(var(--text-muted))]">
             {market.resolved
               ? "Market resolved"
               : `Ends ${endDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
+                  weekday: "short",
+                  month: "short",
                   day: "numeric",
-                  year: "numeric",
                 })}`}
           </span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 text-[rgb(var(--text-primary))]">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight mb-3 sm:mb-4 text-[rgb(var(--text-primary))]">
           {market.question}
         </h1>
-        <p className="text-[rgb(var(--text-secondary))] max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base text-[rgb(var(--text-secondary))] max-w-3xl leading-relaxed">
           This market will be resolved based on official data sources.
         </p>
       </header>
 
-      {/* Main Content */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left: Market Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Probability Display */}
-          <div className="card p-6">
-            <h2 className="text-sm font-medium text-[rgb(var(--text-muted))] mb-4 uppercase tracking-wider">
-              Current Probabilities
-            </h2>
-            <div className="space-y-4">
-              {market.outcomes.map((outcome, i) => (
-                <ProbabilityBar
-                  key={outcome.id}
-                  name={outcome.name}
-                  price={BigInt(outcome.price)}
-                  index={i}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              label="Volume"
-              value={`$${formatVolume(BigInt(market.totalVolume))}`}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Liquidity"
-              value={`$${formatVolume(BigInt(market.totalLiquidity))}`}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Trades"
-              value={trades.length.toString()}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Created"
-              value={new Date(Number(market.createdAt) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-              }
-            />
-          </div>
-
-          {/* Activity Feed */}
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-[rgb(var(--text-muted))] uppercase tracking-wider">
-                Recent Activity
-              </h2>
-              <span className="text-xs text-[rgb(var(--text-muted))]">
-                Last 24 hours
-              </span>
-            </div>
-            <div className="space-y-3">
-              {trades.length > 0 ? (
-                trades.slice(0, 10).map((trade) => (
-                  <ActivityRow key={trade.id} trade={trade} outcomes={market.outcomes} />
-                ))
-              ) : (
-                <p className="text-sm text-[rgb(var(--text-muted))] py-4 text-center">
-                  No recent trades
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Resolution Info */}
-          <div className="card p-6">
-            <h2 className="text-sm font-medium text-[rgb(var(--text-muted))] mb-4 uppercase tracking-wider">
-              Resolution Criteria
-            </h2>
-            <div className="space-y-4 text-sm text-[rgb(var(--text-secondary))]">
-              <p>
-                This market will be resolved by the designated resolver based on official data sources.
-              </p>
-              <p>
-                The market resolves to <strong className="text-[rgb(var(--text-primary))]">{market.outcomes[0]?.name || "Outcome 1"}</strong> if the criteria are met before the resolution date.
-              </p>
-              <p>
-                Otherwise, it resolves to <strong className="text-[rgb(var(--text-primary))]">{market.outcomes[1]?.name || "Outcome 2"}</strong>.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Trading Panel */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24">
+      {/* Main Content - Mobile First */}
+      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 sm:gap-8">
+        {/* Trading Panel - First on mobile for prominence */}
+        <div className="lg:col-span-1 lg:order-2">
+          <div className="lg:sticky lg:top-20">
             <TradingPanel
               marketAddress={market.id}
               ammAddress={market.amm}
@@ -191,6 +87,123 @@ export function MarketDetailPage() {
             />
           </div>
         </div>
+
+        {/* Market Info - Second on mobile */}
+        <div className="lg:col-span-2 lg:order-1 space-y-4 sm:space-y-6">
+          {/* Probability Display */}
+          <div className="card p-4 sm:p-6">
+            <h2 className="text-xs sm:text-sm font-medium text-[rgb(var(--text-muted))] mb-3 sm:mb-4 uppercase tracking-wider">
+              Current Probabilities
+            </h2>
+            <div className="space-y-3 sm:space-y-4">
+              {market.outcomes.map((outcome, i) => (
+                <ProbabilityBar
+                  key={outcome.id}
+                  name={outcome.name}
+                  price={BigInt(outcome.price)}
+                  index={i}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Stats Grid - 2x2 on mobile, 4 on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <StatCard
+              label="Volume"
+              value={`$${formatVolume(BigInt(market.totalVolume))}`}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Liquidity"
+              value={`$${formatVolume(BigInt(market.totalLiquidity))}`}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Trades"
+              value={trades.length.toString()}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Created"
+              value={new Date(Number(market.createdAt) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+              }
+            />
+          </div>
+
+          {/* Activity Feed */}
+          <div className="card p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-xs sm:text-sm font-medium text-[rgb(var(--text-muted))] uppercase tracking-wider">
+                Recent Activity
+              </h2>
+              <span className="text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
+                Last 24 hours
+              </span>
+            </div>
+            <div className="space-y-2 sm:space-y-3">
+              {trades.length > 0 ? (
+                trades.slice(0, 10).map((trade) => (
+                  <ActivityRow key={trade.id} trade={trade} outcomes={market.outcomes} />
+                ))
+              ) : (
+                <p className="text-sm text-[rgb(var(--text-muted))] py-4 text-center">
+                  No recent trades
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Resolution Info - Collapsible on mobile */}
+          <details className="card group" open>
+            <summary className="p-4 sm:p-6 cursor-pointer list-none flex items-center justify-between">
+              <h2 className="text-xs sm:text-sm font-medium text-[rgb(var(--text-muted))] uppercase tracking-wider">
+                Resolution Criteria
+              </h2>
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2"
+                className="text-[rgb(var(--text-muted))] transition-transform group-open:rotate-180"
+              >
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </summary>
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4 text-sm text-[rgb(var(--text-secondary))]">
+              <p>
+                This market will be resolved by the designated resolver based on official data sources.
+              </p>
+              <p>
+                The market resolves to <strong className="text-[rgb(var(--text-primary))]">{market.outcomes[0]?.name || "Outcome 1"}</strong> if the criteria are met before the resolution date.
+              </p>
+              <p>
+                Otherwise, it resolves to <strong className="text-[rgb(var(--text-primary))]">{market.outcomes[1]?.name || "Outcome 2"}</strong>.
+              </p>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   );
@@ -198,20 +211,22 @@ export function MarketDetailPage() {
 
 function MarketDetailSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
-      <div className="h-6 w-32 bg-[rgb(var(--bg-muted))] rounded mb-6" />
-      <div className="h-10 w-3/4 bg-[rgb(var(--bg-muted))] rounded mb-4" />
-      <div className="h-6 w-1/2 bg-[rgb(var(--bg-muted))] rounded mb-8" />
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="card p-6 h-64 bg-[rgb(var(--bg-muted))]" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 animate-pulse">
+      <div className="h-6 w-28 sm:w-32 bg-[rgb(var(--bg-muted))] rounded mb-4 sm:mb-6" />
+      <div className="h-8 sm:h-10 w-full sm:w-3/4 bg-[rgb(var(--bg-muted))] rounded mb-3 sm:mb-4" />
+      <div className="h-5 sm:h-6 w-3/4 sm:w-1/2 bg-[rgb(var(--bg-muted))] rounded mb-6 sm:mb-8" />
+      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-1 lg:order-2">
+          <div className="card p-4 sm:p-6 h-72 sm:h-96 bg-[rgb(var(--bg-muted))]" />
+        </div>
+        <div className="lg:col-span-2 lg:order-1 space-y-4 sm:space-y-6">
+          <div className="card p-4 sm:p-6 h-48 sm:h-64 bg-[rgb(var(--bg-muted))]" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="card p-4 h-20 bg-[rgb(var(--bg-muted))]" />
+              <div key={i} className="card p-3 sm:p-4 h-16 sm:h-20 bg-[rgb(var(--bg-muted))]" />
             ))}
           </div>
         </div>
-        <div className="card p-6 h-96 bg-[rgb(var(--bg-muted))]" />
       </div>
     </div>
   );
@@ -272,13 +287,13 @@ function ProbabilityBar({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium text-[rgb(var(--text-primary))]">{name}</span>
-        <span className="font-mono font-bold text-lg tabular-nums text-[rgb(var(--text-primary))]">
+      <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+        <span className="font-medium text-sm sm:text-base text-[rgb(var(--text-primary))]">{name}</span>
+        <span className="font-mono font-bold text-base sm:text-lg tabular-nums text-[rgb(var(--text-primary))]">
           {percent.toFixed(1)}%
         </span>
       </div>
-      <div className="h-3 rounded-full bg-[rgb(var(--bg-muted))] overflow-hidden">
+      <div className="h-2 sm:h-3 rounded-full bg-[rgb(var(--bg-muted))] overflow-hidden">
         <div
           className={`h-full rounded-full ${colors[index % colors.length]} transition-all duration-700 ease-out`}
           style={{ width: `${percent}%` }}
@@ -298,12 +313,12 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 text-[rgb(var(--text-muted))] mb-2">
+    <div className="card p-3 sm:p-4">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[rgb(var(--text-muted))] mb-1 sm:mb-2">
         {icon}
-        <span className="text-xs uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] sm:text-xs uppercase tracking-wider">{label}</span>
       </div>
-      <div className="text-xl font-bold font-mono tabular-nums text-[rgb(var(--text-primary))]">{value}</div>
+      <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-[rgb(var(--text-primary))]">{value}</div>
     </div>
   );
 }
@@ -321,21 +336,21 @@ function ActivityRow({
   const timeAgo = formatTimeAgo(Number(trade.timestamp));
 
   return (
-    <div className="flex items-center justify-between py-2 border-b border-[rgb(var(--border-subtle))] last:border-0">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between py-2 sm:py-2.5 border-b border-[rgb(var(--border-subtle))] last:border-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
             isBuy ? "bg-[rgb(var(--success-light))]" : "bg-[rgb(var(--error-light))]"
           }`}
         >
           <svg
-            width="14"
-            height="14"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            className={isBuy ? "text-[rgb(var(--success))]" : "text-[rgb(var(--error))]"}
+            className={`sm:w-[14px] sm:h-[14px] ${isBuy ? "text-[rgb(var(--success))]" : "text-[rgb(var(--error))]"}`}
           >
             {isBuy ? (
               <path d="M12 19V5M5 12l7-7 7 7" />
@@ -344,39 +359,23 @@ function ActivityRow({
             )}
           </svg>
         </div>
-        <div>
-          <div className="text-sm">
+        <div className="min-w-0">
+          <div className="text-xs sm:text-sm truncate">
             <span className="font-mono text-[rgb(var(--text-muted))]">
-              {trade.user.slice(0, 6)}...{trade.user.slice(-4)}
+              {trade.user.slice(0, 4)}...{trade.user.slice(-3)}
             </span>
             <span className="text-[rgb(var(--text-muted))]"> {isBuy ? "bought" : "sold"} </span>
             <span className={isBuy ? "text-[rgb(var(--success))]" : "text-[rgb(var(--error))]"}>
               {outcomeName}
             </span>
           </div>
-          <div className="text-xs text-[rgb(var(--text-muted))]">{timeAgo}</div>
+          <div className="text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">{timeAgo}</div>
         </div>
       </div>
-      <div className="font-mono font-medium text-[rgb(var(--text-primary))]">
+      <div className="font-mono font-medium text-sm sm:text-base text-[rgb(var(--text-primary))] flex-shrink-0 ml-2">
         ${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
       </div>
     </div>
   );
 }
 
-function formatTimeAgo(timestamp: number): string {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = now - timestamp;
-  
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-  return `${Math.floor(diff / 86400)} day${diff >= 172800 ? "s" : ""} ago`;
-}
-
-function formatVolume(volume: bigint): string {
-  const num = Number(formatUnits(volume, 6));
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
-  return num.toFixed(0);
-}

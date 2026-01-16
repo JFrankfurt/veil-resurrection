@@ -1,66 +1,12 @@
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
-import { type Address } from "viem";
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useReadContract,
+  useAccount,
+} from "wagmi";
+import { type Address, erc20Abi } from "viem";
+import { RouterABI, MarketABI } from "@predictions/config/abis";
 import { useContracts } from "./useContracts";
-
-// Router ABI for claim function
-const ROUTER_ABI = [
-  {
-    name: "claimWinnings",
-    type: "function",
-    inputs: [{ name: "market", type: "address" }],
-    outputs: [{ name: "payout", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-] as const;
-
-// Market ABI for checking resolution status and outcome token balances
-const MARKET_ABI = [
-  {
-    name: "resolved",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-  },
-  {
-    name: "winningOutcome",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-  {
-    name: "invalid",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-  },
-  {
-    name: "getOutcomeToken",
-    type: "function",
-    inputs: [{ name: "index", type: "uint256" }],
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
-  },
-  {
-    name: "numOutcomes",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
-
-const ERC20_ABI = [
-  {
-    name: "balanceOf",
-    type: "function",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
 
 interface UseClaimParams {
   marketAddress: Address;
@@ -74,54 +20,63 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   const contracts = useContracts();
 
   // Check if market is resolved
-  const { data: isResolved } = useReadContract({
+  const { data: isResolvedRaw } = useReadContract({
     address: marketAddress,
-    abi: MARKET_ABI,
+    abi: MarketABI,
     functionName: "resolved",
     query: { enabled: !!marketAddress },
   });
+  const isResolved = isResolvedRaw as boolean | undefined;
 
   // Get winning outcome
-  const { data: winningOutcome } = useReadContract({
+  const { data: winningOutcomeRaw } = useReadContract({
     address: marketAddress,
-    abi: MARKET_ABI,
+    abi: MarketABI,
     functionName: "winningOutcome",
-    query: { enabled: !!marketAddress && isResolved },
+    query: { enabled: !!marketAddress && !!isResolved },
   });
+  const winningOutcome = winningOutcomeRaw as bigint | undefined;
 
   // Check if market is invalid
-  const { data: isInvalid } = useReadContract({
+  const { data: isInvalidRaw } = useReadContract({
     address: marketAddress,
-    abi: MARKET_ABI,
+    abi: MarketABI,
     functionName: "invalid",
-    query: { enabled: !!marketAddress && isResolved },
+    query: { enabled: !!marketAddress && !!isResolved },
   });
+  const isInvalid = isInvalidRaw as boolean | undefined;
 
   // Get number of outcomes
-  const { data: numOutcomes } = useReadContract({
+  const { data: numOutcomesRaw } = useReadContract({
     address: marketAddress,
-    abi: MARKET_ABI,
+    abi: MarketABI,
     functionName: "numOutcomes",
     query: { enabled: !!marketAddress },
   });
+  const numOutcomes = numOutcomesRaw as bigint | undefined;
 
   // Get winning outcome token address
-  const { data: winningTokenAddress } = useReadContract({
+  const { data: winningTokenAddressRaw } = useReadContract({
     address: marketAddress,
-    abi: MARKET_ABI,
+    abi: MarketABI,
     functionName: "getOutcomeToken",
     args: [winningOutcome ?? BigInt(0)],
-    query: { enabled: !!marketAddress && isResolved && winningOutcome !== undefined },
+    query: {
+      enabled: !!marketAddress && !!isResolved && winningOutcome !== undefined,
+    },
   });
+  const winningTokenAddress = winningTokenAddressRaw as Address | undefined;
 
   // Get user's balance of winning tokens
-  const { data: winningTokenBalance, refetch: refetchBalance } = useReadContract({
-    address: winningTokenAddress as Address,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [address || "0x0"],
-    query: { enabled: !!address && !!winningTokenAddress },
-  });
+  const { data: winningTokenBalance, refetch: refetchBalance } = useReadContract(
+    {
+      address: winningTokenAddress as Address,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [address || "0x0"],
+      query: { enabled: !!address && !!winningTokenAddress },
+    }
+  );
 
   // Claim winnings transaction
   const {
@@ -141,7 +96,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   const claim = () => {
     writeClaim({
       address: contracts.router as Address,
-      abi: ROUTER_ABI,
+      abi: RouterABI,
       functionName: "claimWinnings",
       args: [marketAddress],
     });
@@ -157,7 +112,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
       return BigInt(0);
     }
 
-    if (isInvalid && numOutcomes) {
+    if (isInvalid && numOutcomes && numOutcomes > BigInt(0)) {
       // Invalid market - simplified estimate (actual may differ based on all token holdings)
       return winningTokenBalance / numOutcomes;
     }
@@ -167,7 +122,10 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   };
 
   // Check if user can claim
-  const canClaim = isResolved && winningTokenBalance !== undefined && winningTokenBalance > BigInt(0);
+  const canClaim =
+    isResolved &&
+    winningTokenBalance !== undefined &&
+    winningTokenBalance > BigInt(0);
 
   return {
     // Actions

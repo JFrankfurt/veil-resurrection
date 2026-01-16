@@ -1,4 +1,5 @@
 import { type Address } from "viem";
+import { base, baseSepolia } from "viem/chains";
 
 export interface ContractAddresses {
   marketFactory: Address;
@@ -42,4 +43,46 @@ export function getAddresses(chainId: number): ContractAddresses {
     default:
       throw new Error(`Unsupported chain ID: ${chainId}`);
   }
+}
+
+// =============================================================================
+// CONTRACTS - Chain-keyed object for direct use with wagmi
+// =============================================================================
+
+/**
+ * Contract addresses keyed by chain ID for use with wagmi hooks.
+ * Uses shorter property names for convenience.
+ */
+export const CONTRACTS = {
+  [base.id]: {
+    marketFactory: BASE_MAINNET_ADDRESSES.marketFactory,
+    resolver: BASE_MAINNET_ADDRESSES.resolver,
+    router: BASE_MAINNET_ADDRESSES.router,
+    usdc: BASE_MAINNET_ADDRESSES.collateralToken,
+  },
+  [baseSepolia.id]: {
+    marketFactory: BASE_SEPOLIA_ADDRESSES.marketFactory,
+    resolver: BASE_SEPOLIA_ADDRESSES.resolver,
+    router: BASE_SEPOLIA_ADDRESSES.router,
+    usdc: BASE_SEPOLIA_ADDRESSES.collateralToken,
+  },
+} as const;
+
+/**
+ * Check if a chain ID is supported
+ */
+export function isSupportedChain(
+  chainId: number
+): chainId is keyof typeof CONTRACTS {
+  return chainId in CONTRACTS;
+}
+
+/**
+ * Get contracts for a chain ID, with fallback to Base Sepolia
+ */
+export function getContracts(chainId: number) {
+  if (isSupportedChain(chainId)) {
+    return CONTRACTS[chainId];
+  }
+  return CONTRACTS[baseSepolia.id];
 }

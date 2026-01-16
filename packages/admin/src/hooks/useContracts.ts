@@ -1,40 +1,25 @@
 import { useChainId } from "wagmi";
-import { CONTRACTS } from "@/config/wagmi";
-import {
-  MarketFactoryABI,
-  ResolverABI,
-} from "@predictions/config/abis";
-import { erc20Abi, Abi } from "viem";
-
-const MarketFactoryAbi = MarketFactoryABI as Abi;
-const ResolverAbi = ResolverABI as Abi;
+import { erc20Abi } from "viem";
+import { CONTRACTS, getContracts } from "@predictions/config";
+import { MarketFactoryABI, ResolverABI } from "@predictions/config/abis";
 
 export function useContracts() {
   const chainId = useChainId();
-  const contracts = CONTRACTS[chainId as keyof typeof CONTRACTS];
-
-  if (!contracts) {
-    return {
-      marketFactory: undefined,
-      resolver: undefined,
-      usdc: undefined,
-      isSupportedChain: false,
-    };
-  }
+  const contracts = getContracts(chainId);
 
   return {
     marketFactory: {
       address: contracts.marketFactory,
-      abi: MarketFactoryAbi,
+      abi: MarketFactoryABI,
     },
     resolver: {
       address: contracts.resolver,
-      abi: ResolverAbi,
+      abi: ResolverABI,
     },
     usdc: {
       address: contracts.usdc,
       abi: erc20Abi,
     },
-    isSupportedChain: true,
+    isSupportedChain: chainId in CONTRACTS,
   };
 }

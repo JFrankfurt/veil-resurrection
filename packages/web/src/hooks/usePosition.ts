@@ -1,40 +1,14 @@
-import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { type Address, formatUnits } from "viem";
+import {
+  useAccount,
+  useReadContracts,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { type Address, erc20Abi } from "viem";
+import { MarketABI } from "@predictions/config/abis";
 
-// ABIs
-const ERC20_ABI = [
-  {
-    name: "balanceOf",
-    type: "function",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
-
-const MARKET_ABI = [
-  {
-    name: "claimWinnings",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "payout", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "resolved",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-  },
-  {
-    name: "winningOutcome",
-    type: "function",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
+// Re-export formatTokenBalance from config for backwards compatibility
+export { formatTokenBalance } from "@predictions/config";
 
 interface Outcome {
   name: string;
@@ -58,12 +32,16 @@ export function usePosition(
   const { address: userAddress } = useAccount();
 
   // Get balance of each outcome token for the user
-  const { data: balances, isLoading: balancesLoading, refetch } = useReadContracts({
+  const {
+    data: balances,
+    isLoading: balancesLoading,
+    refetch,
+  } = useReadContracts({
     contracts:
       userAddress && outcomes.length > 0
         ? outcomes.map((outcome) => ({
             address: outcome.token,
-            abi: ERC20_ABI,
+            abi: erc20Abi,
             functionName: "balanceOf",
             args: [userAddress],
           }))
@@ -77,8 +55,16 @@ export function usePosition(
   const { data: marketState } = useReadContracts({
     contracts: marketAddress
       ? [
-          { address: marketAddress, abi: MARKET_ABI, functionName: "resolved" },
-          { address: marketAddress, abi: MARKET_ABI, functionName: "winningOutcome" },
+          {
+            address: marketAddress,
+            abi: MarketABI,
+            functionName: "resolved",
+          },
+          {
+            address: marketAddress,
+            abi: MarketABI,
+            functionName: "winningOutcome",
+          },
         ]
       : [],
     query: {
@@ -86,7 +72,7 @@ export function usePosition(
     },
   });
 
-  const resolved = marketState?.[0]?.result as boolean || false;
+  const resolved = (marketState?.[0]?.result as boolean) || false;
   const winningOutcome = Number(marketState?.[1]?.result || 0);
 
   // Parse positions
@@ -98,7 +84,9 @@ export function usePosition(
   }));
 
   const hasPosition = positions.some((p) => p.balance > BigInt(0));
-  const winningPosition = positions.find((p) => p.isWinning && p.balance > BigInt(0));
+  const winningPosition = positions.find(
+    (p) => p.isWinning && p.balance > BigInt(0)
+  );
 
   return {
     positions,
@@ -128,10 +116,10 @@ export function useClaimWinnings(marketAddress: Address | undefined) {
 
   const claim = () => {
     if (!marketAddress) return;
-    
+
     writeContract({
       address: marketAddress,
-      abi: MARKET_ABI,
+      abi: MarketABI,
       functionName: "claimWinnings",
     });
   };
@@ -146,15 +134,4 @@ export function useClaimWinnings(marketAddress: Address | undefined) {
     reset,
     isLoading: isPending || isConfirming,
   };
-}
-
-/**
- * Format token balance from 18 decimals to readable string
- */
-export function formatTokenBalance(balance: bigint): string {
-  const num = Number(formatUnits(balance, 18));
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-  if (num >= 1) return num.toFixed(2);
-  return num.toFixed(4);
 }

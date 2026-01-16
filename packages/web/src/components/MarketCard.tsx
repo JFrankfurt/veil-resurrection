@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatUnits } from "viem";
+import { formatVolume } from "@predictions/config";
 
 interface MarketCardProps {
   address: string;
@@ -38,9 +39,9 @@ export function MarketCard({
 
   return (
     <Link to={`/market/${address}`}>
-      <article className="card p-5 h-full flex flex-col transition-all duration-300 hover:-translate-y-1">
+      <article className="card p-4 sm:p-5 h-full flex flex-col transition-all duration-300 active:scale-[0.98] sm:hover:-translate-y-1">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
           <StatusBadge status={status} />
           <TimeDisplay
             endTime={endTime}
@@ -50,12 +51,12 @@ export function MarketCard({
         </div>
 
         {/* Question */}
-        <h3 className="text-lg font-semibold leading-snug mb-4 line-clamp-2 text-[rgb(var(--text-primary))] group-hover:text-[rgb(var(--accent-primary))] transition-colors">
+        <h3 className="text-base sm:text-lg font-semibold leading-snug mb-3 sm:mb-4 line-clamp-2 text-[rgb(var(--text-primary))] group-hover:text-[rgb(var(--accent-primary))] transition-colors">
           {question}
         </h3>
 
         {/* Outcomes */}
-        <div className="flex-1 space-y-2 mb-4">
+        <div className="flex-1 space-y-2 mb-3 sm:mb-4">
           {outcomes.slice(0, 2).map((outcome, i) => (
             <OutcomeRow
               key={i}
@@ -66,24 +67,24 @@ export function MarketCard({
             />
           ))}
           {outcomes.length > 2 && (
-            <div className="text-xs text-[rgb(var(--text-muted))] pt-1">
+            <div className="text-[10px] sm:text-xs text-[rgb(var(--text-muted))] pt-1">
               +{outcomes.length - 2} more outcomes
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-[rgb(var(--border-subtle))] flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1.5 text-[rgb(var(--text-muted))]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="pt-3 sm:pt-4 border-t border-[rgb(var(--border-subtle))] flex items-center justify-between text-xs sm:text-sm">
+          <div className="flex items-center gap-1 sm:gap-1.5 text-[rgb(var(--text-muted))]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-[14px] sm:h-[14px]">
               <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
             </svg>
             <span className="font-mono">{formatVolume(totalVolume)}</span>
-            <span className="text-[rgb(var(--text-muted))]">volume</span>
+            <span className="text-[rgb(var(--text-muted))] hidden sm:inline">volume</span>
           </div>
-          <div className="flex items-center gap-1 text-[rgb(var(--accent-primary))] opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-xs font-medium">Trade</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="flex items-center gap-1 text-[rgb(var(--accent-primary))]">
+            <span className="text-[10px] sm:text-xs font-medium">Trade</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-[14px] sm:h-[14px]">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </div>
@@ -125,7 +126,7 @@ function TimeDisplay({
 
   if (daysRemaining === 0) {
     return (
-      <span className="text-xs text-[rgb(var(--warning))] font-medium">
+      <span className="text-[10px] sm:text-xs text-[rgb(var(--warning))] font-medium">
         Ending today
       </span>
     );
@@ -133,14 +134,14 @@ function TimeDisplay({
 
   if (daysRemaining <= 7) {
     return (
-      <span className="text-xs text-[rgb(var(--text-muted))]">
+      <span className="text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
         {daysRemaining}d left
       </span>
     );
   }
 
   return (
-    <span className="text-xs text-[rgb(var(--text-muted))]">
+    <span className="text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
       {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
     </span>
   );
@@ -161,7 +162,7 @@ function OutcomeRow({
 
   return (
     <div
-      className={`relative flex items-center justify-between p-3 rounded-xl transition-colors ${
+      className={`relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-colors ${
         isWinner
           ? "bg-[rgb(var(--success-light))] border border-[rgb(var(--success))]/20"
           : "bg-[rgb(var(--bg-elevated))]"
@@ -177,20 +178,20 @@ function OutcomeRow({
         }}
       />
 
-      <div className="relative flex items-center gap-2">
+      <div className="relative flex items-center gap-1.5 sm:gap-2">
         {isWinner && (
           <span className="text-[rgb(var(--success))]">✓</span>
         )}
         {isLeading && !isWinner && (
-          <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--accent-primary))]" />
+          <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[rgb(var(--accent-primary))]" />
         )}
-        <span className={`font-medium ${isWinner ? "text-[rgb(var(--success))]" : "text-[rgb(var(--text-primary))]"}`}>
+        <span className={`font-medium text-sm sm:text-base ${isWinner ? "text-[rgb(var(--success))]" : "text-[rgb(var(--text-primary))]"}`}>
           {name}
         </span>
       </div>
 
       <span
-        className={`font-mono font-semibold tabular-nums ${
+        className={`font-mono font-semibold text-sm sm:text-base tabular-nums ${
           isWinner ? "text-[rgb(var(--success))]" : "text-[rgb(var(--text-primary))]"
         }`}
       >
@@ -200,9 +201,3 @@ function OutcomeRow({
   );
 }
 
-function formatVolume(volume: bigint): string {
-  const num = Number(formatUnits(volume, 6));
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
-  return num.toFixed(0);
-}

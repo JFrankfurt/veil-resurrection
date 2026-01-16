@@ -1,4 +1,5 @@
 import { Header } from './Header'
+import { BottomNav } from './BottomNav'
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,8 +9,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       
-      {/* Footer */}
-      <footer className="border-t border-[rgb(var(--border-subtle))] mt-24 bg-[rgb(var(--bg-card))]">
+      {/* Footer - hidden on mobile when bottom nav is visible */}
+      <footer className="border-t border-[rgb(var(--border-subtle))] mt-16 md:mt-24 bg-[rgb(var(--bg-card))] hidden md:block">
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[rgb(var(--text-muted))] text-sm">
             <span>Built on</span>
@@ -25,6 +26,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      {/* Bottom navigation for mobile */}
+      <BottomNav />
+      
+      {/* Spacer for bottom nav on mobile */}
+      <div className="h-20 md:hidden" />
     </div>
   )
 }
