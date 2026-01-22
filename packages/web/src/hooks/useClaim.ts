@@ -5,7 +5,7 @@ import {
   useAccount,
 } from "wagmi";
 import { type Address, erc20Abi } from "viem";
-import { RouterABI, MarketABI } from "@predictions/config/abis";
+import { routerAbi, marketAbi } from "@predictions/config";
 import { useContracts } from "./useContracts";
 
 interface UseClaimParams {
@@ -22,7 +22,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   // Check if market is resolved
   const { data: isResolvedRaw } = useReadContract({
     address: marketAddress,
-    abi: MarketABI,
+    abi: marketAbi,
     functionName: "resolved",
     query: { enabled: !!marketAddress },
   });
@@ -31,7 +31,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   // Get winning outcome
   const { data: winningOutcomeRaw } = useReadContract({
     address: marketAddress,
-    abi: MarketABI,
+    abi: marketAbi,
     functionName: "winningOutcome",
     query: { enabled: !!marketAddress && !!isResolved },
   });
@@ -40,7 +40,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   // Check if market is invalid
   const { data: isInvalidRaw } = useReadContract({
     address: marketAddress,
-    abi: MarketABI,
+    abi: marketAbi,
     functionName: "invalid",
     query: { enabled: !!marketAddress && !!isResolved },
   });
@@ -49,7 +49,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   // Get number of outcomes
   const { data: numOutcomesRaw } = useReadContract({
     address: marketAddress,
-    abi: MarketABI,
+    abi: marketAbi,
     functionName: "numOutcomes",
     query: { enabled: !!marketAddress },
   });
@@ -58,7 +58,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   // Get winning outcome token address
   const { data: winningTokenAddressRaw } = useReadContract({
     address: marketAddress,
-    abi: MarketABI,
+    abi: marketAbi,
     functionName: "getOutcomeToken",
     args: [winningOutcome ?? BigInt(0)],
     query: {
@@ -96,7 +96,7 @@ export function useClaim({ marketAddress }: UseClaimParams) {
   const claim = () => {
     writeClaim({
       address: contracts.router as Address,
-      abi: RouterABI,
+      abi: routerAbi,
       functionName: "claimWinnings",
       args: [marketAddress],
     });

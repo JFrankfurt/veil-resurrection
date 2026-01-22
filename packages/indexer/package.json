@@ -1,0 +1,11 @@
+{
+  "name": "@predictions/indexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shovel indexer configuration and database migrations for Predictions V2",
+  "scripts": {
+    "db:reset": "psql $DATABASE_URL -f schema.sql -f triggers.sql",
+    "db:schema": "psql $DATABASE_URL -f schema.sql",
+    "db:triggers": "psql $DATABASE_URL -f triggers.sql"
+  }
+}

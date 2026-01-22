@@ -1,0 +1,363 @@
+{
+  "$comment": "Predictions V2 - Shovel Indexer Configuration",
+  "pg_url": "$DATABASE_URL",
+  "eth_sources": [
+    {
+      "name": "base",
+      "chain_id": 8453,
+      "urls": ["$BASE_RPC_URL"]
+    },
+    {
+      "name": "base-sepolia",
+      "chain_id": 84532,
+      "urls": ["$BASE_SEPOLIA_RPC_URL"]
+    }
+  ],
+  "integrations": [
+    {
+      "name": "market-created",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "markets",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "question", "type": "text"},
+          {"name": "amm", "type": "bytea"},
+          {"name": "end_time", "type": "numeric"},
+          {"name": "num_outcomes", "type": "int"},
+          {"name": "created_at", "type": "numeric"},
+          {"name": "created_tx", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "created_at"},
+        {"name": "tx_hash", "column": "created_tx"}
+      ],
+      "event": {
+        "name": "MarketCreated",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "market", "type": "address", "column": "id"},
+          {"indexed": true, "name": "amm", "type": "address", "column": "amm"},
+          {"indexed": false, "name": "question", "type": "string", "column": "question"},
+          {"indexed": false, "name": "endTime", "type": "uint256", "column": "end_time"},
+          {"indexed": false, "name": "numOutcomes", "type": "uint8", "column": "num_outcomes"}
+        ]
+      }
+    },
+    {
+      "name": "market-resolved",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "market_resolutions",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "market_id", "type": "bytea"},
+          {"name": "winning_outcome", "type": "int"},
+          {"name": "invalid", "type": "bool"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "market_id"}
+      ],
+      "event": {
+        "name": "MarketResolved",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": false, "name": "winningOutcome", "type": "uint256", "column": "winning_outcome"},
+          {"indexed": false, "name": "invalid", "type": "bool", "column": "invalid"}
+        ]
+      }
+    },
+    {
+      "name": "complete-sets-issued",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "complete_sets_issued",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "market_id", "type": "bytea"},
+          {"name": "to_address", "type": "bytea"},
+          {"name": "amount", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "market_id"}
+      ],
+      "event": {
+        "name": "CompleteSetsIssued",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "to", "type": "address", "column": "to_address"},
+          {"indexed": false, "name": "amount", "type": "uint256", "column": "amount"}
+        ]
+      }
+    },
+    {
+      "name": "complete-sets-redeemed",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "complete_sets_redeemed",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "market_id", "type": "bytea"},
+          {"name": "from_address", "type": "bytea"},
+          {"name": "amount", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "market_id"}
+      ],
+      "event": {
+        "name": "CompleteSetsRedeemed",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "from", "type": "address", "column": "from_address"},
+          {"indexed": false, "name": "amount", "type": "uint256", "column": "amount"}
+        ]
+      }
+    },
+    {
+      "name": "winnings-claimed",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "winnings_claimed",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "market_id", "type": "bytea"},
+          {"name": "user_address", "type": "bytea"},
+          {"name": "outcome", "type": "int"},
+          {"name": "payout", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "market_id"}
+      ],
+      "event": {
+        "name": "WinningsClaimed",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "user", "type": "address", "column": "user_address"},
+          {"indexed": false, "name": "outcome", "type": "uint256", "column": "outcome"},
+          {"indexed": false, "name": "amount", "type": "uint256", "column": "payout"}
+        ]
+      }
+    },
+    {
+      "name": "buy-trades",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "trades",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "amm_address", "type": "bytea"},
+          {"name": "user_address", "type": "bytea"},
+          {"name": "outcome", "type": "int"},
+          {"name": "is_buy", "type": "bool"},
+          {"name": "collateral_amount", "type": "numeric"},
+          {"name": "token_amount", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "amm_address"}
+      ],
+      "event": {
+        "name": "Buy",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "user", "type": "address", "column": "user_address"},
+          {"indexed": false, "name": "outcome", "type": "uint256", "column": "outcome"},
+          {"indexed": false, "name": "collateralIn", "type": "uint256", "column": "collateral_amount"},
+          {"indexed": false, "name": "tokensOut", "type": "uint256", "column": "token_amount"}
+        ]
+      }
+    },
+    {
+      "name": "sell-trades",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "trades",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "amm_address", "type": "bytea"},
+          {"name": "user_address", "type": "bytea"},
+          {"name": "outcome", "type": "int"},
+          {"name": "is_buy", "type": "bool"},
+          {"name": "collateral_amount", "type": "numeric"},
+          {"name": "token_amount", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "amm_address"}
+      ],
+      "event": {
+        "name": "Sell",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "user", "type": "address", "column": "user_address"},
+          {"indexed": false, "name": "outcome", "type": "uint256", "column": "outcome"},
+          {"indexed": false, "name": "tokensIn", "type": "uint256", "column": "token_amount"},
+          {"indexed": false, "name": "collateralOut", "type": "uint256", "column": "collateral_amount"}
+        ]
+      }
+    },
+    {
+      "name": "liquidity-added",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "liquidity_events",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "amm_address", "type": "bytea"},
+          {"name": "provider", "type": "bytea"},
+          {"name": "is_add", "type": "bool"},
+          {"name": "collateral_amount", "type": "numeric"},
+          {"name": "lp_tokens", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "amm_address"}
+      ],
+      "event": {
+        "name": "LiquidityAdded",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "provider", "type": "address", "column": "provider"},
+          {"indexed": false, "name": "collateralAmount", "type": "uint256", "column": "collateral_amount"},
+          {"indexed": false, "name": "lpTokens", "type": "uint256", "column": "lp_tokens"}
+        ]
+      }
+    },
+    {
+      "name": "liquidity-removed",
+      "enabled": true,
+      "sources": [
+        {
+          "name": "base-sepolia",
+          "start": 0
+        }
+      ],
+      "table": {
+        "name": "liquidity_events",
+        "columns": [
+          {"name": "id", "type": "bytea"},
+          {"name": "amm_address", "type": "bytea"},
+          {"name": "provider", "type": "bytea"},
+          {"name": "is_add", "type": "bool"},
+          {"name": "collateral_amount", "type": "numeric"},
+          {"name": "lp_tokens", "type": "numeric"},
+          {"name": "timestamp", "type": "numeric"},
+          {"name": "tx_hash", "type": "bytea"}
+        ],
+        "unique": [["id"]]
+      },
+      "block": [
+        {"name": "block_time", "column": "timestamp"},
+        {"name": "tx_hash", "column": "tx_hash"},
+        {"name": "log_addr", "column": "amm_address"}
+      ],
+      "event": {
+        "name": "LiquidityRemoved",
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "provider", "type": "address", "column": "provider"},
+          {"indexed": false, "name": "lpTokens", "type": "uint256", "column": "lp_tokens"},
+          {"indexed": false, "name": "collateralAmount", "type": "uint256", "column": "collateral_amount"}
+        ]
+      }
+    }
+  ]
+}

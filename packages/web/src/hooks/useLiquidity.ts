@@ -5,8 +5,7 @@ import {
   useAccount,
 } from "wagmi";
 import { type Address, erc20Abi } from "viem";
-import { RouterABI, OutcomeAMMABI } from "@predictions/config/abis";
-import { withSlippage, getDeadline } from "@predictions/config";
+import { routerAbi, outcomeAmmAbi, withSlippage, getDeadline } from "@predictions/config";
 import { useContracts } from "./useContracts";
 
 interface UseLiquidityParams {
@@ -48,7 +47,7 @@ export function useLiquidity({
   // Check LP token allowance for Router (for removing liquidity)
   const { data: lpAllowanceRaw, refetch: refetchLpAllowance } = useReadContract({
     address: ammAddress,
-    abi: OutcomeAMMABI,
+    abi: outcomeAmmAbi,
     functionName: "allowance",
     args: [address || "0x0", contracts.router as Address],
     query: { enabled: !!address && !!contracts.router && !!ammAddress },
@@ -58,7 +57,7 @@ export function useLiquidity({
   // Check LP token balance
   const { data: lpBalanceRaw, refetch: refetchLpBalance } = useReadContract({
     address: ammAddress,
-    abi: OutcomeAMMABI,
+    abi: outcomeAmmAbi,
     functionName: "balanceOf",
     args: [address || "0x0"],
     query: { enabled: !!address && !!ammAddress },
@@ -68,7 +67,7 @@ export function useLiquidity({
   // Check total LP supply (for share calculation)
   const { data: lpTotalSupplyRaw } = useReadContract({
     address: ammAddress,
-    abi: OutcomeAMMABI,
+    abi: outcomeAmmAbi,
     functionName: "totalSupply",
     query: { enabled: !!ammAddress },
   });
@@ -144,7 +143,7 @@ export function useLiquidity({
   const approveLp = (amount: bigint) => {
     writeApproveLp({
       address: ammAddress,
-      abi: OutcomeAMMABI,
+      abi: outcomeAmmAbi,
       functionName: "approve",
       args: [contracts.router as Address, amount],
     });
@@ -165,7 +164,7 @@ export function useLiquidity({
 
     writeAddLiquidity({
       address: contracts.router as Address,
-      abi: RouterABI,
+      abi: routerAbi,
       functionName: "addLiquidity",
       args: [marketAddress, collateralAmount, minOut, deadline],
     });
@@ -186,7 +185,7 @@ export function useLiquidity({
 
     writeRemoveLiquidity({
       address: contracts.router as Address,
-      abi: RouterABI,
+      abi: routerAbi,
       functionName: "removeLiquidity",
       args: [marketAddress, lpTokens, minOut, deadline],
     });

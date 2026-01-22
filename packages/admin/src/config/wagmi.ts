@@ -5,7 +5,7 @@ import { CONTRACTS } from "@predictions/config";
 
 export const config = getDefaultConfig({
   appName: "Predictions Admin",
-  projectId: process.env.VITE_WALLETCONNECT_PROJECT_ID || "demo",
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo",
   chains: [base, baseSepolia],
   transports: {
     [base.id]: http(),

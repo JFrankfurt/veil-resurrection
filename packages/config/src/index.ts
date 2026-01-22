@@ -12,3 +12,6 @@ export * from "./constants";
 
 // Utility functions
 export * from "./utils";
+
+// Generated typed ABIs from contracts
+export * from "./generated";

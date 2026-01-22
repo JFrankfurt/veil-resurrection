@@ -5,24 +5,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { parseUnits } from "viem";
 import { baseSepolia } from "wagmi/chains";
 import { CONTRACTS } from "@/config/wagmi";
-
-// Simplified ABI for MarketFactory.createMarket
-const MARKET_FACTORY_ABI = [
-  {
-    name: "createMarket",
-    type: "function",
-    inputs: [
-      { name: "question", type: "string" },
-      { name: "outcomeNames", type: "string[]" },
-      { name: "endTime", type: "uint256" },
-      { name: "initialLiquidity", type: "uint256" },
-    ],
-    outputs: [
-      { name: "market", type: "address" },
-      { name: "amm", type: "address" },
-    ],
-  },
-] as const;
+import { MarketFactoryABI } from "@predictions/config/abis";
 
 export default function CreateMarketPage() {
   const { address, chainId } = useAccount();
@@ -66,7 +49,7 @@ export default function CreateMarketPage() {
 
     writeContract({
       address: contracts.marketFactory,
-      abi: MARKET_FACTORY_ABI,
+      abi: MarketFactoryABI,
       functionName: "createMarket",
       args: [
         question,

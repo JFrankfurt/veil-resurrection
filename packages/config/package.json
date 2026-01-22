@@ -21,9 +21,11 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate": "wagmi generate"
   },
   "devDependencies": {
+    "@wagmi/cli": "^2.1.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },

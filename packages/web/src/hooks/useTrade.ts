@@ -4,7 +4,7 @@ import {
   useReadContract,
 } from "wagmi";
 import { type Address, erc20Abi } from "viem";
-import { RouterABI, OutcomeAMMABI } from "@predictions/config/abis";
+import { routerAbi, outcomeAmmAbi } from "@predictions/config";
 import { useContracts } from "./useContracts";
 
 // Re-export withSlippage from config for backwards compatibility
@@ -61,7 +61,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const useQuoteBuy = (outcome: number, collateralAmount: bigint) => {
     return useReadContract({
       address: ammAddress,
-      abi: OutcomeAMMABI,
+      abi: outcomeAmmAbi,
       functionName: "quoteBuy",
       args: [BigInt(outcome), collateralAmount],
       query: {
@@ -76,7 +76,7 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const useQuoteSell = (outcome: number, tokenAmount: bigint) => {
     return useReadContract({
       address: ammAddress,
-      abi: OutcomeAMMABI,
+      abi: outcomeAmmAbi,
       functionName: "quoteSell",
       args: [BigInt(outcome), tokenAmount],
       query: {
@@ -91,13 +91,14 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const buy = async (
     outcome: number,
     collateralAmount: bigint,
-    minTokensOut: bigint
+    minTokensOut: bigint,
+    deadline: bigint
   ) => {
     writeBuy({
       address: contracts.router as Address,
-      abi: RouterABI,
+      abi: routerAbi,
       functionName: "buy",
-      args: [marketAddress, BigInt(outcome), collateralAmount, minTokensOut],
+      args: [marketAddress, BigInt(outcome), collateralAmount, minTokensOut, deadline],
     });
   };
 
@@ -107,13 +108,14 @@ export function useTrade({ marketAddress, ammAddress }: UseTradeParams) {
   const sell = async (
     outcome: number,
     tokenAmount: bigint,
-    minCollateralOut: bigint
+    minCollateralOut: bigint,
+    deadline: bigint
   ) => {
     writeSell({
       address: contracts.router as Address,
-      abi: RouterABI,
+      abi: routerAbi,
       functionName: "sell",
-      args: [marketAddress, BigInt(outcome), tokenAmount, minCollateralOut],
+      args: [marketAddress, BigInt(outcome), tokenAmount, minCollateralOut, deadline],
     });
   };
 

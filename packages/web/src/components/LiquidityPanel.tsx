@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAccount } from "wagmi";
 import { formatUnits, parseUnits, type Address, maxUint256 } from "viem";
 import { formatVolume } from "@predictions/config";
 import { useLiquidity } from "@/hooks/useLiquidity";
-import toast from "react-hot-toast";
+import { useTransactionToast } from "@/hooks/useTransactionToast";
 
 interface LiquidityPanelProps {
   marketAddress: string;
@@ -45,17 +45,23 @@ export function LiquidityPanel({
     isApproveUsdcPending,
     isApproveUsdcConfirming,
     isApproveUsdcSuccess,
+    approveUsdcHash,
     isApproveLpPending,
     isApproveLpConfirming,
     isApproveLpSuccess,
+    approveLpHash,
 
     // Liquidity states
     isAddLiquidityPending,
     isAddLiquidityConfirming,
     isAddLiquiditySuccess,
+    addLiquidityError,
+    addLiquidityHash,
     isRemoveLiquidityPending,
     isRemoveLiquidityConfirming,
     isRemoveLiquiditySuccess,
+    removeLiquidityError,
+    removeLiquidityHash,
 
     // Combined
     isLoading,
@@ -75,74 +81,66 @@ export function LiquidityPanel({
     ? needsUsdcApproval(parsedAmount) 
     : needsLpApproval(parsedAmount);
 
-  // Handle USDC approval success
-  useEffect(() => {
-    if (isApproveUsdcSuccess) {
-      toast.success("USDC approved! You can now add liquidity.");
-      refetchAll();
-    }
-  }, [isApproveUsdcSuccess, refetchAll]);
+  // Transaction toast handlers
+  useTransactionToast({
+    id: "approve-usdc-liquidity",
+    pendingMessage: "Approving USDC...",
+    confirmingMessage: "Confirming approval...",
+    successMessage: "USDC approved! You can now add liquidity.",
+    hash: approveUsdcHash,
+    isPending: isApproveUsdcPending,
+    isConfirming: isApproveUsdcConfirming,
+    isSuccess: isApproveUsdcSuccess,
+    error: null,
+    onSuccess: () => refetchAll(),
+  });
 
-  // Handle LP approval success
-  useEffect(() => {
-    if (isApproveLpSuccess) {
-      toast.success("LP tokens approved! You can now remove liquidity.");
-      refetchAll();
-    }
-  }, [isApproveLpSuccess, refetchAll]);
+  useTransactionToast({
+    id: "approve-lp-liquidity",
+    pendingMessage: "Approving LP tokens...",
+    confirmingMessage: "Confirming approval...",
+    successMessage: "LP tokens approved! You can now remove liquidity.",
+    hash: approveLpHash,
+    isPending: isApproveLpPending,
+    isConfirming: isApproveLpConfirming,
+    isSuccess: isApproveLpSuccess,
+    error: null,
+    onSuccess: () => refetchAll(),
+  });
 
-  // Handle add liquidity success
-  useEffect(() => {
-    if (isAddLiquiditySuccess) {
-      toast.success("Liquidity added successfully!");
+  useTransactionToast({
+    id: "add-liquidity",
+    pendingMessage: "Adding liquidity...",
+    confirmingMessage: "Confirming transaction...",
+    successMessage: "Liquidity added successfully!",
+    hash: addLiquidityHash,
+    isPending: isAddLiquidityPending,
+    isConfirming: isAddLiquidityConfirming,
+    isSuccess: isAddLiquiditySuccess,
+    error: addLiquidityError,
+    onSuccess: () => {
       setAmount("");
       refetchAll();
       resetAddLiquidity();
-    }
-  }, [isAddLiquiditySuccess, refetchAll, resetAddLiquidity]);
+    },
+  });
 
-  // Handle remove liquidity success
-  useEffect(() => {
-    if (isRemoveLiquiditySuccess) {
-      toast.success("Liquidity removed successfully!");
+  useTransactionToast({
+    id: "remove-liquidity",
+    pendingMessage: "Removing liquidity...",
+    confirmingMessage: "Confirming transaction...",
+    successMessage: "Liquidity removed successfully!",
+    hash: removeLiquidityHash,
+    isPending: isRemoveLiquidityPending,
+    isConfirming: isRemoveLiquidityConfirming,
+    isSuccess: isRemoveLiquiditySuccess,
+    error: removeLiquidityError,
+    onSuccess: () => {
       setAmount("");
       refetchAll();
       resetRemoveLiquidity();
-    }
-  }, [isRemoveLiquiditySuccess, refetchAll, resetRemoveLiquidity]);
-
-  // Handle loading toasts
-  useEffect(() => {
-    if (isApproveUsdcPending || isApproveUsdcConfirming) {
-      toast.loading("Approving USDC...", { id: "approve" });
-    } else if (isApproveUsdcSuccess) {
-      toast.dismiss("approve");
-    }
-  }, [isApproveUsdcPending, isApproveUsdcConfirming, isApproveUsdcSuccess]);
-
-  useEffect(() => {
-    if (isApproveLpPending || isApproveLpConfirming) {
-      toast.loading("Approving LP tokens...", { id: "approve-lp" });
-    } else if (isApproveLpSuccess) {
-      toast.dismiss("approve-lp");
-    }
-  }, [isApproveLpPending, isApproveLpConfirming, isApproveLpSuccess]);
-
-  useEffect(() => {
-    if (isAddLiquidityPending || isAddLiquidityConfirming) {
-      toast.loading("Adding liquidity...", { id: "liquidity" });
-    } else if (isAddLiquiditySuccess) {
-      toast.dismiss("liquidity");
-    }
-  }, [isAddLiquidityPending, isAddLiquidityConfirming, isAddLiquiditySuccess]);
-
-  useEffect(() => {
-    if (isRemoveLiquidityPending || isRemoveLiquidityConfirming) {
-      toast.loading("Removing liquidity...", { id: "liquidity" });
-    } else if (isRemoveLiquiditySuccess) {
-      toast.dismiss("liquidity");
-    }
-  }, [isRemoveLiquidityPending, isRemoveLiquidityConfirming, isRemoveLiquiditySuccess]);
+    },
+  });
 
   const handleApprove = () => {
     if (isAdding) {

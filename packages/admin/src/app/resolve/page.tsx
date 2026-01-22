@@ -5,29 +5,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadCont
 import { baseSepolia } from "wagmi/chains";
 import { CONTRACTS } from "@/config/wagmi";
 import { type Address } from "viem";
-
-// Simplified ABIs
-const RESOLVER_ABI = [
-  {
-    name: "resolve",
-    type: "function",
-    inputs: [
-      { name: "market", type: "address" },
-      { name: "winningOutcome", type: "uint256" },
-      { name: "invalid", type: "bool" },
-    ],
-    outputs: [],
-  },
-  {
-    name: "operators",
-    type: "function",
-    inputs: [{ name: "operator", type: "address" }],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
-
-// Market ABI for future use when fetching market data from chain
-// const MARKET_ABI = [...] as const;
+import { ResolverABI } from "@predictions/config/abis";
 
 type MarketData = {
   question: string;
@@ -51,7 +29,7 @@ export default function ResolveMarketsPage() {
   // Check if connected wallet is an operator
   const { data: isOperator } = useReadContract({
     address: contracts.resolver,
-    abi: RESOLVER_ABI,
+    abi: ResolverABI,
     functionName: "operators",
     args: address ? [address] : undefined,
     query: { enabled: !!address },
@@ -89,7 +67,7 @@ export default function ResolveMarketsPage() {
 
     writeContract({
       address: contracts.resolver,
-      abi: RESOLVER_ABI,
+      abi: ResolverABI,
       functionName: "resolve",
       args: [
         marketAddress as Address,

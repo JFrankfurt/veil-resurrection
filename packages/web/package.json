@@ -22,7 +22,8 @@
     "react-router-dom": "^6.28.0",
     "tailwind-merge": "^3.4.0",
     "viem": "^2",
-    "wagmi": "^2.14.0"
+    "wagmi": "^2.14.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20",

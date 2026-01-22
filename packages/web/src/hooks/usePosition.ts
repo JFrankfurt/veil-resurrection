@@ -5,7 +5,7 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { type Address, erc20Abi } from "viem";
-import { MarketABI } from "@predictions/config/abis";
+import { marketAbi } from "@predictions/config";
 
 // Re-export formatTokenBalance from config for backwards compatibility
 export { formatTokenBalance } from "@predictions/config";
@@ -57,12 +57,12 @@ export function usePosition(
       ? [
           {
             address: marketAddress,
-            abi: MarketABI,
+            abi: marketAbi,
             functionName: "resolved",
           },
           {
             address: marketAddress,
-            abi: MarketABI,
+            abi: marketAbi,
             functionName: "winningOutcome",
           },
         ]
@@ -119,7 +119,7 @@ export function useClaimWinnings(marketAddress: Address | undefined) {
 
     writeContract({
       address: marketAddress,
-      abi: MarketABI,
+      abi: marketAbi,
       functionName: "claimWinnings",
     });
   };

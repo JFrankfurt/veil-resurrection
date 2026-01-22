@@ -1,0 +1,85 @@
+# =============================================================================
+# Predictions V2 - Local Development Environment
+# =============================================================================
+#
+# This docker-compose file sets up:
+# - PostgreSQL database for indexed data
+# - Shovel indexer for blockchain event indexing
+# - REST API server for serving indexed data
+#
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose up -d postgres # Start only Postgres
+#   docker-compose logs -f shovel # View Shovel logs
+#   docker-compose down           # Stop all services
+#   docker-compose down -v        # Stop and remove volumes
+#
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: predictions-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: predictions
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize database with schema on first run
+      - ./packages/indexer/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./packages/indexer/triggers.sql:/docker-entrypoint-initdb.d/02-triggers.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d predictions"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Shovel Indexer
+  # ---------------------------------------------------------------------------
+  shovel:
+    image: indexsupply/shovel:latest
+    container_name: predictions-shovel
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database connection (use docker network hostname)
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/predictions
+      # RPC URLs - override in .env file
+      BASE_RPC_URL: ${BASE_RPC_URL:-https://mainnet.base.org}
+      BASE_SEPOLIA_RPC_URL: ${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}
+    volumes:
+      - ./packages/indexer/shovel.json:/config.json:ro
+    command: ["-config", "/config.json"]
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # REST API Server
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    container_name: predictions-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/predictions
+      PORT: 3001
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

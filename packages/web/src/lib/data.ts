@@ -1,7 +1,7 @@
 /**
  * Data layer with mock/live toggle
- * 
- * Set USE_MOCK to false and configure VITE_SUBGRAPH_URL to use live data.
+ *
+ * Set VITE_USE_MOCK_DATA=false in .env.local and configure VITE_API_URL to use live data.
  */
 
 import {
@@ -14,10 +14,8 @@ import {
   type Trade,
   type Position,
   type ProtocolStats,
-} from "./graphql";
-
-// Toggle this to switch between mock and live data
-const USE_MOCK = true;
+} from "./api";
+import { env } from "./env";
 
 // Re-export types for convenience
 export type { Market, Trade, Position, ProtocolStats };
@@ -27,19 +25,19 @@ export type { Market, Trade, Position, ProtocolStats };
 // =============================================================================
 
 export async function getMarkets(): Promise<Market[]> {
-  if (USE_MOCK) return MOCK_MARKETS;
+  if (env.useMockData) return MOCK_MARKETS;
   return fetchAllMarkets();
 }
 
 export async function getMarket(address: string): Promise<Market | null> {
-  if (USE_MOCK) {
+  if (env.useMockData) {
     return MOCK_MARKETS.find((m) => m.id.toLowerCase() === address.toLowerCase()) || null;
   }
   return fetchMarket(address);
 }
 
 export async function getTrades(marketAddress: string): Promise<Trade[]> {
-  if (USE_MOCK) {
+  if (env.useMockData) {
     return MOCK_TRADES.filter(
       (t) => t.id.startsWith(marketAddress.toLowerCase())
     );
@@ -48,7 +46,7 @@ export async function getTrades(marketAddress: string): Promise<Trade[]> {
 }
 
 export async function getUserPositions(userAddress: string): Promise<Position[]> {
-  if (USE_MOCK) {
+  if (env.useMockData) {
     // In mock mode, return all positions (simulate being the owner)
     return MOCK_POSITIONS;
   }
@@ -56,7 +54,7 @@ export async function getUserPositions(userAddress: string): Promise<Position[]>
 }
 
 export async function getProtocolStats(): Promise<ProtocolStats> {
-  if (USE_MOCK) {
+  if (env.useMockData) {
     return {
       totalMarkets: MOCK_MARKETS.length,
       totalVolume: MOCK_MARKETS.reduce(

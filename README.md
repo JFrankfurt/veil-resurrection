@@ -7,16 +7,30 @@ A modern prediction market protocol built on Base. Create markets on real-world 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                          Frontend                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Web App   │  │ Admin Panel │  │       Subgraph          │  │
-│  │   (Vite)    │  │  (Next.js)  │  │    (The Graph)          │  │
-│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
-│         │                │                     │                 │
-│         └────────────────┼─────────────────────┘                 │
-│                          │                                       │
-└──────────────────────────┼───────────────────────────────────────┘
-                           │
-┌──────────────────────────┼───────────────────────────────────────┐
+│  ┌─────────────┐  ┌─────────────┐                               │
+│  │   Web App   │  │ Admin Panel │                               │
+│  │   (Vite)    │  │  (Next.js)  │                               │
+│  └──────┬──────┘  └──────┬──────┘                               │
+│         │                │                                       │
+│         └───────┬────────┘                                       │
+│                 │                                                │
+└─────────────────┼────────────────────────────────────────────────┘
+                  │
+┌─────────────────┼────────────────────────────────────────────────┐
+│                 │         Data Layer                             │
+│                 ▼                                                 │
+│         ┌─────────────┐                                          │
+│         │  REST API   │ ◄──── Express.js                         │
+│         └──────┬──────┘                                          │
+│                │                                                 │
+│                ▼                                                 │
+│         ┌─────────────┐        ┌─────────────┐                   │
+│         │  PostgreSQL │ ◄──────│   Shovel    │ ◄─── Blockchain   │
+│         │  (Indexed)  │        │  (Indexer)  │      Events       │
+│         └─────────────┘        └─────────────┘                   │
+└──────────────────────────────────────────────────────────────────┘
+                  │
+┌─────────────────┼────────────────────────────────────────────────┐
 │                    Smart Contracts                               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
 │  │   Market    │  │  OutcomeAMM │  │    MarketFactory        │  │
@@ -24,7 +38,7 @@ A modern prediction market protocol built on Base. Create markets on real-world 
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │  ┌─────────────┐  ┌─────────────┐                               │
 │  │  Resolver   │  │   Router    │                               │
-│  │ (Centralized)│  │  (Trading)  │                               │
+│  │(Centralized)│  │  (Trading)  │                               │
 │  └─────────────┘  └─────────────┘                               │
 └─────────────────────────────────────────────────────────────────┘
                            │
@@ -39,8 +53,9 @@ A modern prediction market protocol built on Base. Create markets on real-world 
 | Package | Description |
 |---------|-------------|
 | `packages/contracts` | Solidity smart contracts (Foundry) |
-| `packages/config` | Shared TypeScript types and ABIs |
-| `packages/subgraph` | The Graph indexer for market data |
+| `packages/config` | Shared TypeScript types, ABIs, and utilities |
+| `packages/indexer` | Shovel configuration for blockchain indexing |
+| `packages/api` | REST API for serving indexed data |
 | `packages/web` | Public-facing Vite + React web app |
 | `packages/admin` | Admin panel for market creation/resolution (Next.js) |
 
@@ -49,7 +64,9 @@ A modern prediction market protocol built on Base. Create markets on real-world 
 - **Contracts**: Solidity 0.8.20, Foundry, OpenZeppelin
 - **Web App**: Vite, React 18, React Router, TailwindCSS, wagmi/viem, RainbowKit
 - **Admin**: Next.js 14, TailwindCSS, wagmi/viem
-- **Indexer**: The Graph (AssemblyScript)
+- **Indexer**: Shovel (blockchain event indexer)
+- **Database**: PostgreSQL 16
+- **API**: Express.js, Node.js
 - **Monorepo**: pnpm workspaces
 
 ## Quick Start
@@ -58,6 +75,7 @@ A modern prediction market protocol built on Base. Create markets on real-world 
 
 - Node.js 18+
 - pnpm 8+
+- Docker & Docker Compose (for local development)
 - Foundry (for contracts)
 
 ### Installation
@@ -70,7 +88,32 @@ pnpm install
 pnpm build
 ```
 
-### Development
+### Local Development
+
+The easiest way to run the full stack locally is with Docker Compose:
+
+```bash
+# Start all services (Postgres, Shovel indexer, API)
+docker-compose up -d
+
+# View indexer logs
+docker-compose logs -f shovel
+
+# Stop all services
+docker-compose down
+
+# Stop and remove data volumes
+docker-compose down -v
+```
+
+Then run the web app:
+
+```bash
+cd packages/web
+pnpm dev
+```
+
+### Manual Development Setup
 
 ```bash
 # Run the web app in development mode
@@ -85,6 +128,10 @@ pnpm test
 cd packages/contracts
 forge build
 pnpm abi-export
+
+# Run the API server
+cd packages/api
+pnpm dev
 
 # Build all packages
 pnpm build  # from root
@@ -161,7 +208,14 @@ pnpm deploy
 ```bash
 # Web App (.env)
 VITE_WALLETCONNECT_PROJECT_ID=your_project_id
-VITE_SUBGRAPH_URL=https://api.studio.thegraph.com/query/YOUR_ID/predictions-v2/version/latest
+VITE_API_URL=http://localhost:3001/api
+
+# Admin Panel (.env)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+
+# API Server (.env)
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/predictions
+PORT=3001
 
 # Contracts (.env)
 PRIVATE_KEY=your_private_key
@@ -171,49 +225,47 @@ BASESCAN_API_KEY=your_api_key
 
 ### Data Layer
 
-The web app uses a centralized data layer (`src/lib/data.ts`) with a mock/live toggle:
-
-```typescript
-// Toggle this to switch between mock and live data
-const USE_MOCK = true;
-```
-
-When `USE_MOCK` is `true`, the app displays realistic mock data for development. Set it to `false` and configure `VITE_SUBGRAPH_URL` to fetch live data from your deployed subgraph.
-
-## Subgraph
-
-The subgraph indexes all market events for fast querying:
+The web app fetches data from the REST API (`packages/api`), which queries a PostgreSQL database populated by the Shovel indexer. For development without a running indexer, you can enable mock data:
 
 ```bash
-cd packages/subgraph
-
-# Generate types
-pnpm codegen
-
-# Build
-pnpm build
-
-# Deploy (requires Graph CLI auth)
-pnpm deploy
+# In packages/web/.env
+VITE_USE_MOCK_DATA=true
 ```
 
-### Example Query
+## Indexer (Shovel + PostgreSQL)
 
-```graphql
-query GetMarkets {
-  markets(first: 10, orderBy: totalVolume, orderDirection: desc) {
-    id
-    question
-    endTime
-    resolved
-    outcomes {
-      name
-      price
-    }
-    totalVolume
-  }
-}
-```
+The indexer uses [Shovel](https://indexsupply.com/shovel/docs/) to listen for blockchain events and store them in PostgreSQL.
+
+### Indexed Events
+
+| Event | Contract | Description |
+|-------|----------|-------------|
+| `MarketCreated` | MarketFactory | New market deployment |
+| `MarketResolved` | Market | Market resolution |
+| `Buy` | OutcomeAMM | Outcome token purchase |
+| `Sell` | OutcomeAMM | Outcome token sale |
+| `LiquidityAdded` | OutcomeAMM | LP deposit |
+| `LiquidityRemoved` | OutcomeAMM | LP withdrawal |
+
+### Configuration Files
+
+- `packages/indexer/schema.sql` - PostgreSQL table definitions
+- `packages/indexer/triggers.sql` - Computed field triggers
+- `packages/indexer/shovel.json` - Shovel event configuration
+
+See `packages/indexer/README.md` for detailed setup instructions.
+
+## REST API
+
+The API (`packages/api`) provides endpoints for the frontend:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/markets` | List all markets |
+| `GET /api/markets/:id` | Get single market details |
+| `GET /api/markets/:id/trades` | Get market trade history |
+| `GET /api/users/:address/positions` | Get user's positions |
+| `GET /api/stats` | Get protocol statistics |
 
 ## Testing
 
@@ -260,6 +312,14 @@ forge test --gas-report
 - 10x cheaper market deployment
 - Same security as full contracts
 - Upgradeable implementations
+
+### Why Shovel over The Graph?
+
+- Self-hosted, no third-party dependencies
+- Full SQL access for complex queries
+- Lower operational costs
+- Easier debugging with direct database access
+- PostgreSQL triggers for computed fields
 
 ## Security Considerations
 

@@ -1,7 +1,6 @@
 import { useReadContract, useReadContracts } from "wagmi";
 import { type Address } from "viem";
-import { MarketABI, OutcomeAMMABI } from "@predictions/config/abis";
-import { type MarketData } from "@predictions/config";
+import { marketAbi, outcomeAmmAbi, type MarketData } from "@predictions/config";
 
 // Re-export utilities from config for backwards compatibility
 export { formatPrice, formatVolume } from "@predictions/config";
@@ -15,21 +14,21 @@ export function useMarket(marketAddress: Address | undefined) {
   const { data: basicInfo, isLoading: basicLoading } = useReadContracts({
     contracts: marketAddress
       ? [
-          { address: marketAddress, abi: MarketABI, functionName: "question" },
-          { address: marketAddress, abi: MarketABI, functionName: "endTime" },
-          { address: marketAddress, abi: MarketABI, functionName: "resolved" },
+          { address: marketAddress, abi: marketAbi, functionName: "question" },
+          { address: marketAddress, abi: marketAbi, functionName: "endTime" },
+          { address: marketAddress, abi: marketAbi, functionName: "resolved" },
           {
             address: marketAddress,
-            abi: MarketABI,
+            abi: marketAbi,
             functionName: "winningOutcome",
           },
-          { address: marketAddress, abi: MarketABI, functionName: "invalid" },
+          { address: marketAddress, abi: marketAbi, functionName: "invalid" },
           {
             address: marketAddress,
-            abi: MarketABI,
+            abi: marketAbi,
             functionName: "numOutcomes",
           },
-          { address: marketAddress, abi: MarketABI, functionName: "amm" },
+          { address: marketAddress, abi: marketAbi, functionName: "amm" },
         ]
       : [],
     query: {
@@ -51,25 +50,25 @@ export function useMarket(marketAddress: Address | undefined) {
         ? outcomeIndices.flatMap((i) => [
             {
               address: marketAddress,
-              abi: MarketABI,
+              abi: marketAbi,
               functionName: "getOutcomeName",
               args: [i],
             },
             {
               address: marketAddress,
-              abi: MarketABI,
+              abi: marketAbi,
               functionName: "getOutcomeToken",
               args: [i],
             },
             {
               address: ammAddress,
-              abi: OutcomeAMMABI,
+              abi: outcomeAmmAbi,
               functionName: "getPrice",
               args: [i],
             },
             {
               address: ammAddress,
-              abi: OutcomeAMMABI,
+              abi: outcomeAmmAbi,
               functionName: "getReserve",
               args: [i],
             },
@@ -81,15 +80,14 @@ export function useMarket(marketAddress: Address | undefined) {
   });
 
   // Get AMM total supply (liquidity)
-  const { data: totalSupplyRaw } = useReadContract({
+  const { data: totalSupply } = useReadContract({
     address: ammAddress,
-    abi: OutcomeAMMABI,
+    abi: outcomeAmmAbi,
     functionName: "totalSupply",
     query: {
       enabled: !!ammAddress,
     },
   });
-  const totalSupply = totalSupplyRaw as bigint | undefined;
 
   const isLoading = basicLoading || outcomesLoading;
 
